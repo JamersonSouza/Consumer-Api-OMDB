@@ -10,8 +10,10 @@ import tech.jamersondev.streams.util.ConvertData;
 
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.List;
 import java.util.Scanner;
+import java.util.stream.Collectors;
 
 public class Main {
 
@@ -45,7 +47,22 @@ public class Main {
         }
        // seasons.forEach(System.out::println);
         System.out.println("==== ALL NAME EPISODIOS THE SEASON: " + numberSession);
-        seasons.forEach(s -> s.episodios().forEach(e -> System.out.println(e.title())));
+        //seasons.forEach(s -> s.episodios().forEach(e -> System.out.println(e.title())));
+        getTop5EpsodiosBySeason(seasons);
+
+    }
+
+    private static void getTop5EpsodiosBySeason(List<SerieSeasons> seasons) {
+        List<SerieEpisodio> dadosEpsodios = seasons
+                .stream().flatMap(t -> t.episodios().stream())
+                //.collect(Collectors.toList());
+                .toList();//list imutável
+        //Top 5 ep ordenanando do maior para o menor com base na comparação de avaliação
+        dadosEpsodios.stream()
+                .filter(e -> !e.avaliacao().equalsIgnoreCase("N/A"))
+                .sorted(Comparator.comparing(SerieEpisodio::avaliacao)
+                .reversed()
+        ).limit(5).forEach(System.out::println);
     }
 
     public void getEpisode() throws IOException, InterruptedException {
