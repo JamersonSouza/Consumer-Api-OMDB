@@ -2,6 +2,7 @@ package tech.jamersondev.streams.main;
 
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
+import tech.jamersondev.streams.domain.Epsodio;
 import tech.jamersondev.streams.domain.Serie;
 import tech.jamersondev.streams.domain.SerieEpisodio;
 import tech.jamersondev.streams.domain.SerieSeasons;
@@ -9,6 +10,8 @@ import tech.jamersondev.streams.services.ConsumerAPI;
 import tech.jamersondev.streams.util.ConvertData;
 
 import java.io.IOException;
+import java.time.LocalDate;
+import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
@@ -26,7 +29,7 @@ public class Main {
         private String serieSelected = "";
         private int yearSelected;
         public void findSeries() throws IOException, InterruptedException {
-            System.out.println("Digite o nome da série ou filme");
+            System.out.println("Digite o nome da série");
             String name = scan.nextLine();
             serieSelected = name;
             System.out.println("Digite o ano de lançamento");
@@ -46,9 +49,46 @@ public class Main {
             seasons.add(data);
         }
        // seasons.forEach(System.out::println);
-        System.out.println("==== ALL NAME EPISODIOS THE SEASON: " + numberSession);
+        System.out.println("==== ALL EPISODIOS THE SEASON: " + numberSession);
         //seasons.forEach(s -> s.episodios().forEach(e -> System.out.println(e.title())));
-        getTop5EpsodiosBySeason(seasons);
+        //getTop5EpsodiosBySeason(seasons);
+        //getEpsidiosBySeason(seasons);
+        getEpsidiosByDate(seasons);
+    }
+
+    private static void getEpsidiosBySeason(List<SerieSeasons> seasons) {
+        List<Epsodio> epsodios = seasons.stream()
+                .flatMap(s -> s.episodios().stream()
+                        .filter(e ->!e.avaliacao().equalsIgnoreCase("N/A"))
+                        .map(e -> new Epsodio(s.number(), e))
+                        .sorted(Comparator.comparing(Epsodio::getAvaliacao).reversed()))
+                .toList();
+        epsodios.forEach(System.out::println);
+    }
+
+    private void getEpsidiosByDate(List<SerieSeasons> seasons){
+        System.out.println("A partir de qual ano você quer ver os Epsodios? ");
+        int year = scan.nextInt();
+        scan.nextLine();
+        LocalDate findDate = LocalDate.of(year, 1,1);
+
+        List<Epsodio> epsodios = seasons.stream()
+                .flatMap(s -> s.episodios().stream()
+                        .filter(e -> !e.avaliacao().equalsIgnoreCase("N/A"))
+                        .peek(e -> System.out.println("Filtrando por epsódios com avaliação" + e))
+                        .map(e -> new Epsodio(s.number(), e))
+                        .sorted(Comparator.comparing(Epsodio::getAvaliacao).reversed()))
+                        .peek(e -> System.out.println("Ordenando pela maior avaliação" + e))
+                .toList();
+        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("dd/MM/yyy");
+        epsodios.stream().filter(e -> e.getDataLancamento() != null &&
+                e.getDataLancamento().isAfter(findDate))
+                .forEach(e -> System.out.println(
+                        "Temporada: " + e.getNumberSeason()+ "\n" +
+                                " Nome: " + e.getTitle() + "\n" +
+                                " Episódio número: " + e.getNumberEp() + "\n" +
+                                " Data Lançamento: " + e.getDataLancamento().format(formatter)
+                ));
 
     }
 
