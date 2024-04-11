@@ -6,16 +6,14 @@ import tech.jamersondev.streams.domain.Epsodio;
 import tech.jamersondev.streams.domain.Serie;
 import tech.jamersondev.streams.domain.SerieEpisodio;
 import tech.jamersondev.streams.domain.SerieSeasons;
+import tech.jamersondev.streams.exceptions.TitleEpsodioNotFoundException;
 import tech.jamersondev.streams.services.ConsumerAPI;
 import tech.jamersondev.streams.util.ConvertData;
 
 import java.io.IOException;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
-import java.util.ArrayList;
-import java.util.Comparator;
-import java.util.List;
-import java.util.Scanner;
+import java.util.*;
 import java.util.stream.Collectors;
 
 public class Main {
@@ -23,7 +21,7 @@ public class Main {
         //@Value("${key.omdb}")
         private static final String VALUEAPIKEY = "327d093";
         private static final String URLOMDB = "https://www.omdbapi.com/?apikey=";
-        private Scanner scan = new Scanner(System.in);
+        private final Scanner scan = new Scanner(System.in);
         private ConsumerAPI consumerAPI = new ConsumerAPI();
         private ConvertData conversor = new ConvertData();
         private String serieSelected = "";
@@ -54,9 +52,10 @@ public class Main {
         //getTop5EpsodiosBySeason(seasons);
         //getEpsidiosBySeason(seasons);
         getEpsidiosByDate(seasons);
+        this.getEpsidiosBySeason(seasons);
     }
 
-    private static void getEpsidiosBySeason(List<SerieSeasons> seasons) {
+    private void getEpsidiosBySeason(List<SerieSeasons> seasons) {
         List<Epsodio> epsodios = seasons.stream()
                 .flatMap(s -> s.episodios().stream()
                         .filter(e ->!e.avaliacao().equalsIgnoreCase("N/A"))
@@ -64,6 +63,14 @@ public class Main {
                         .sorted(Comparator.comparing(Epsodio::getAvaliacao).reversed()))
                 .toList();
         epsodios.forEach(System.out::println);
+        System.out.println("Digite o título de um epsódio que queira buscar");
+        String title = scan.nextLine();
+        Optional<Epsodio> findEpsodioByTitle = epsodios.stream().filter(e -> e.getTitle().contains(title))
+                .findFirst();
+        findEpsodioByTitle.ifPresent
+                (e -> System.out.println(String.format("Epsódio %s da temporada %s foi encontrado",
+                        e.getTitle(), e.getNumberSeason())));
+        findEpsodioByTitle.orElseThrow( () -> new TitleEpsodioNotFoundException(title));
     }
 
     private void getEpsidiosByDate(List<SerieSeasons> seasons){
