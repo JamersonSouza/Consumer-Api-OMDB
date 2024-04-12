@@ -51,6 +51,7 @@ public class Main {
         //seasons.forEach(s -> s.episodios().forEach(e -> System.out.println(e.title())));
         //getTop5EpsodiosBySeason(seasons);
         //getEpsidiosBySeason(seasons);
+        averageBySeason(seasons);
         getEpsidiosByDate(seasons);
         this.getEpsidiosBySeason(seasons);
     }
@@ -110,6 +111,25 @@ public class Main {
                 .sorted(Comparator.comparing(SerieEpisodio::avaliacao)
                 .reversed()
         ).limit(5).forEach(System.out::println);
+    }
+
+    public void averageBySeason(List<SerieSeasons> seasons){
+        List<Epsodio> epsodios = seasons.stream()
+                .flatMap(s -> s.episodios().stream()
+                        .filter(e ->!e.avaliacao().equalsIgnoreCase("N/A"))
+                        .map(e -> new Epsodio(s.number(), e))
+                        .sorted(Comparator.comparing(Epsodio::getAvaliacao).reversed()))
+                .toList();
+            Map<Integer, Double> averages = epsodios.stream()
+                    .filter(e->e.getAvaliacao() > 0.0)
+                    .collect(Collectors.groupingBy(Epsodio::getNumberSeason,
+                            Collectors.averagingDouble(Epsodio::getAvaliacao)));
+        System.out.println(averages);
+
+        DoubleSummaryStatistics statistics = epsodios.stream()
+                .filter(e->e.getAvaliacao() > 0.0)
+                .collect(Collectors.summarizingDouble(Epsodio::getAvaliacao));
+        System.out.println("Estatísticas: "+ statistics);
     }
 
     public void getEpisode() throws IOException, InterruptedException {
